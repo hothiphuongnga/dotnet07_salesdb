@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SalesDB.Data;
+using SalesDB.Mapping;
 using SalesDB.Repositories;
 using SalesDB.Services;
 
@@ -18,6 +19,9 @@ builder.Services.AddDbContext<SalesDbContext>(opt=>opt.UseSqlServer(builder.Conf
 // DI SERVICE
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICustomersService, CustomersService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+
 // 
 
 // builder.Services.AddScoped<IOrderService, OrderService>();
@@ -32,8 +36,13 @@ builder.Services.AddScoped<ICustomersService, CustomersService>();
 // DI REPO
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
+// Automapper
 
+builder.Services.AddAutoMapper(cfg=>{}, typeof(MappingProfile));
 
 
 var app = builder.Build();

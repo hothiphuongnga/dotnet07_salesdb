@@ -10,3 +10,10 @@ public class ProductDto
 
     public int Stock { get; set; }
 }
+
+public class AddProductRequest 
+{
+    public string ProductName { get; set; } = null!;
+
+    public decimal Price { get; set; }
+}

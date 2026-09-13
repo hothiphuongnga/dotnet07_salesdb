@@ -44,6 +44,9 @@ public partial class SalesDbContext : DbContext
 
             entity.Property(e => e.EmployeeId).HasColumnName("EmployeeID");
             entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Password)
+                .HasMaxLength(250)
+                .IsUnicode(false);
             entity.Property(e => e.Phone)
                 .HasMaxLength(20)
                 .IsUnicode(false);
