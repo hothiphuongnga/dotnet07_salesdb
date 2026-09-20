@@ -106,6 +106,8 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+
+
 app.MapControllers();
 
 app.UseHttpsRedirection();
