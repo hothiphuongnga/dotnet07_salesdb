@@ -21,3 +21,10 @@ public class LoginRequest
     public string? Phone { get; set; }
     public string? Password { get; set; }
 }
+public class LoginResponse
+{
+    public int EmployeeId { get; set; }
+    public string Name { get; set; } = null!;
+    public string Role { get; set; } = null!;
+    public string Token { get; set; } = null!;
+}

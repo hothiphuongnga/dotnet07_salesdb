@@ -29,7 +29,9 @@ public class MappingProfile : Profile
         
         CreateMap<Employee,RegisterEmployee>().ReverseMap();
         CreateMap<Employee,EmployeeDto>().ReverseMap();
-
+        // map emloy và loginresponse
+        CreateMap<Employee, LoginResponse>().
+        ForMember(dest => dest.Token, opt=> opt.Ignore());
 
 
 

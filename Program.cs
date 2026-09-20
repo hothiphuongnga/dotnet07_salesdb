@@ -1,4 +1,8 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using SalesDB.Data;
 using SalesDB.Mapping;
 using SalesDB.Repositories;
@@ -11,10 +15,30 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers(); // Đăng ký DI controllers
 
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen(); // cài thêm dotnet add package Swashbuckle.AspNetCore
+// builder.Services.AddSwaggerGen(); // cài thêm dotnet add package Swashbuckle.AspNetCore
+builder.Services.AddSwaggerGen(option =>
+{
+    option.AddSecurityDefinition("bearer",
+    new OpenApiSecurityScheme()
+    {
+        Name = "JWT Authentication",
+        Description = "Nhập JWT Access Token",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    }
+    );
+    option.AddSecurityRequirement(doc =>
+        new OpenApiSecurityRequirement()
+        {
+            [new OpenApiSecuritySchemeReference("bearer", doc)] = []
+        }
+    );
+});
 
 // iterface , class thuc thi interface
-builder.Services.AddDbContext<SalesDbContext>(opt=>opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<SalesDbContext>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // DI SERVICE
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -22,7 +46,8 @@ builder.Services.AddScoped<ICustomersService, CustomersService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 
-// 
+// JWT
+builder.Services.AddScoped<IJwtService, JwtService>();
 
 // builder.Services.AddScoped<IOrderService, OrderService>();
 // giữ khởi tạo của OrderService cho đến khi dữ liệu trả về cho api
@@ -42,18 +67,45 @@ builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
 // Automapper
 
-builder.Services.AddAutoMapper(cfg=>{}, typeof(MappingProfile));
+builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
+
+var key = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:key chua duoc cau hinh");
+//  Kiem tra token
+builder.Services.AddAuthentication(option =>
+{
+    option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    option.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(option =>
+{
+    option.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero,
+    };
+});
+builder.Services.AddAuthorization();
+
+
 
 
 var app = builder.Build();
-
+//
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseSwagger();
-    app.UseSwaggerUI();   
+    app.UseSwaggerUI();
 }
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 app.UseHttpsRedirection();

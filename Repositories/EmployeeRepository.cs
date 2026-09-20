@@ -10,6 +10,7 @@ public interface IEmployeeRepository
 {
     Task<Employee> AddAsync(Employee model);
     Task<Employee?> FindByPhoneAsync(string phone);
+    Task<Employee?> GetByIdAsync(int id);
 
 }
 public class EmployeeRepository(SalesDbContext _db) : IEmployeeRepository
@@ -24,6 +25,11 @@ public class EmployeeRepository(SalesDbContext _db) : IEmployeeRepository
     public Task<Employee?> FindByPhoneAsync(string phone)
     {
         return _db.Employees.FirstOrDefaultAsync(e => e.Phone == phone);
+    }
+
+    public Task<Employee?> GetByIdAsync(int id)
+    {
+       return _db.Employees.FirstOrDefaultAsync(e => e.EmployeeId == id);
     }
 }
 
