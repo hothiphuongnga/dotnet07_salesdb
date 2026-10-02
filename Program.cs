@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using SalesDB.Data;
 using SalesDB.Dtos.Base;
+using SalesDB.Filters;
 using SalesDB.Mapping;
 using SalesDB.Middlewares;
 using SalesDB.Repositories;
@@ -117,6 +118,14 @@ builder.Services.AddCors(option =>
     });
 });
 
+//  FILTER
+builder.Services.AddScoped<DemoAuthorizationFilter>();
+builder.Services.AddScoped<DemoResourceFilter>();
+builder.Services.AddScoped<CacheResourceFilter>();
+builder.Services.AddScoped<DemoActionFilter>();
+builder.Services.AddScoped<DemoExceptionFilter>();
+builder.Services.AddScoped<DemoResultFilter>();
+
 
 
 
@@ -156,7 +165,7 @@ app.UseCors("AllowCors");
 app.UseGlobalExceptionHandle();
 // DI 1 dongf nafy thooi
 // đã đóng gói hết các miđleware lại bên trong rồi
-app.UseMiddlewareExtensions();
+// app.UseMiddlewareExtensions();
 
 
 // chạy theo thứ tự

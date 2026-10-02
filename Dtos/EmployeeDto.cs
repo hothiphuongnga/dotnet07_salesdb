@@ -11,7 +11,7 @@ public class EmployeeDto
 }
 public class RegisterEmployee
 {
-    public string Name { get; set; } = null!;
+    public string Name { get; set; } = null!; // bắt buôc
     public string Role { get; set; } = null!;
     public string? Phone { get; set; }
     public string? Password { get; set; }

@@ -1,0 +1,32 @@
+HTTP request
+↓
+middleware (chạy theo thứ tự cấu hình)
+↓
+routing 
+↓
+MVC filter
+↓
+AUTH FILTER
+↓
+RESOURCE FILTER - BEFORE
+↓
+Model binding
+↓
+Action filter - BEFORE
+↓
+Action method thực thi action
+↓
+Action filter - AFTER
+↓
+Exceptio  filter (nếu có)
+↓
+Result filter - BEFORE
+↓
+IActionResult cho http
+↓
+Result filter - After
+↓
+RESOURCE FILTER - After
+
+(cuối khoá chua sẽ về)
+

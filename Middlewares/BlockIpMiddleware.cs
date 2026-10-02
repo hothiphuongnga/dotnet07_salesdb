@@ -12,7 +12,7 @@ public class BlockIpMiddleware(RequestDelegate next)
         var clienIp = context.Connection.RemoteIpAddress;
                 Console.WriteLine("🟢 [BLOCK] - " + clienIp);
 
-        string[] blockIps = ["::1"];
+        string[] blockIps = [""];
         // ddooir ::1 thanh ip thucwj te can lock
 
         var isBlock = clienIp is not null && blockIps.Any(value => IPAddress.TryParse(value, out var blockIp) && AreEqual(clienIp, blockIp));

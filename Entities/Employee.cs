@@ -29,4 +29,12 @@ public partial class Employee
 
 
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+
+    // bộ thông tin chung cho tất cả các table
+    // createBy
+    // createAt
+    // updateBy
+    // updateAt
+    // delete = false // filter 
+    
 }
