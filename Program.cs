@@ -125,6 +125,15 @@ builder.Services.AddScoped<CacheResourceFilter>();
 builder.Services.AddScoped<DemoActionFilter>();
 builder.Services.AddScoped<DemoExceptionFilter>();
 builder.Services.AddScoped<DemoResultFilter>();
+// CACHE
+
+// DI IMemorycache
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<SimpleCacheFilter>();
+
+// clear cache
+// vif tất cả các request của product đều dùng chung cache
+builder.Services.AddSingleton<ProductCacheState>();
 
 
 

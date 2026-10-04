@@ -3,17 +3,19 @@ namespace SalesDB.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SalesDB.Dtos;
+using SalesDB.Filters;
 using SalesDB.Services;
 
 [Route("api/[controller]")]
 [ApiController]
 // chi co nguoi dung da xac thi thi moi xem dc ds product
-[Authorize]
+// [Authorize]
 // chi cos admin moi xem dc
 public class ProductController(IProductService _service) : ControllerBase
 {
     [AllowAnonymous] // khong yeu cau token
     [HttpGet]
+    [ServiceFilter(typeof(SimpleCacheFilter))]
     public async Task<IActionResult> Get()
     {
         var res = await _service.GetAllProductsAsync();
@@ -23,20 +25,28 @@ public class ProductController(IProductService _service) : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var res = await _service.GetProductByIdAsync(id);
-        return res; 
+        return res;
     }
 
-    [Authorize(Roles = "Admin")]
+    // [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] AddProductRequest model)
     {
         return await _service.AddAsync(model);
     }
-    [Authorize(Roles = "Admin")]
+    // [Authorize(Roles = "Admin")]
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Post([FromBody] ProductDto model, int id)
     {
         return await _service.UpdateAsync(model, id);
+    }
+
+
+    [HttpGet("paging")]
+    [ServiceFilter(typeof(SimpleCacheFilter))]
+    public async Task<IActionResult> GetPaging(int size = 10, int page = 1, string? keywords = "")
+    {
+        return await _service.GetPaging(page, size, keywords);
     }
 }

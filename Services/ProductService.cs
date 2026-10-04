@@ -13,19 +13,18 @@ public interface IProductService
     Task<ResponseEntity> GetProductByIdAsync(int id);
     Task<ResponseEntity> AddAsync(AddProductRequest model);
     Task<ResponseEntity> UpdateAsync(ProductDto model, int id);
-
-
+    Task<ResponseEntity> GetPaging(int page, int size, string? keywords);
 }
-public class ProductService(IProductRepository _repository, IMapper _mapper) : IProductService
+public class ProductService(IProductRepository _repository, IMapper _mapper, ProductCacheState _productCacheState) : IProductService
 {
     public async Task<ResponseEntity> AddAsync(AddProductRequest model)
     {
-
+        // clear cache product()
         // service -> repo
         // thuc hien chuyen doi tu AddProductRequest -> Product
         var obj = _mapper.Map<Product>(model);
         var res = await _repository.AddAsync(obj);
-
+        _productCacheState.Clear();
         return new ResponseEntity(201, _mapper.Map<ProductDto>(res), "add success");
     }
 
@@ -57,6 +56,7 @@ public class ProductService(IProductRepository _repository, IMapper _mapper) : I
 
     public async Task<ResponseEntity> UpdateAsync(ProductDto model, int id)
     {
+        // clear cache
         // check ton tai  -> update
         var product = await _repository.GetById(id);
 
@@ -71,8 +71,43 @@ public class ProductService(IProductRepository _repository, IMapper _mapper) : I
         // map du lieu cua model vap cho product
         _mapper.Map(model, product);
         var res = await _repository.UpdateAsync(product);
+         _productCacheState.Clear();
+
         return new ResponseEntity(200, _mapper.Map<ProductDto>(res), "update success");
     }
+
+    public async Task<ResponseEntity> GetPaging(int page, int size, string? keywords)
+    {
+        var res  = await _repository.GetPaging(page, size, keywords);
+        var totalItems  = await _repository.CountPaging(page, size, keywords);
+        
+        var items = _mapper.Map<List<ProductDto>>(res);
+        // size =10 , totalItems=10 => 1 page 
+        // size = 10 , totalItems= 11 => 2 page  11/10 => 1,0001
+        var totalPages = (int)Math.Ceiling(totalItems/ (double)size);
+        // (totalItems + size -1 )/ size
+        // 10 + 10 -1 => 19 / size  = 1
+        // 11 + 10 -1 => 20 / 10 = 2
+
+        var paging = new PagingResult<ProductDto>
+        {
+            Items = items,
+            TotalItems = totalItems,
+            TotalPages = totalPages,
+            PageIndex = page,
+            PageSize = size
+        };
+        
+        return new ResponseEntity(200, paging,$"Trang {page} với {size} product");
+    }
+
+
+
+
+
+
+
+
 }
 
 // AI => auto in

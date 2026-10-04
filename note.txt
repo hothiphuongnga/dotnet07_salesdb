@@ -30,3 +30,17 @@ RESOURCE FILTER - After
 
 (cuối khoá chua sẽ về)
 
+
+
+-- Cache
+In-Memory Cache:    Lưu trữ trong RAM của ứng dụng
+                    Ứng dụng đơn giản, không cần phân tán
+
+    ƯU ĐIỂM : Nhanh , dễ cấu hình
+    Nhươc điểm: app restart -> mất cache
+                server A, và server B cache khác nhau
+                không phù hợp khi cache nhiều server
+
+- 
+
+                
