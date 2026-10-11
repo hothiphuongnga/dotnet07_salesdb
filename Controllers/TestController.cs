@@ -2,10 +2,12 @@ namespace SalesDB.Controllers
 {
     using System.Text;
     using Microsoft.AspNetCore.Mvc;
+    using SalesDB.Dtos.Base;
+    using SalesDB.Services;
 
     [Route("api/[controller]")]
     [ApiController]
-    public class TestController : ControllerBase
+    public class TestController(IRedisService _redis) : ControllerBase
     {
         [HttpGet("demo/{id}")]// demo/2
         public async Task<IActionResult> Get(int id, [FromHeader] string lang = "vi") // lang= vi , en, cn, jp
@@ -59,7 +61,7 @@ namespace SalesDB.Controllers
             using var reader = new StreamReader(HttpContext.Request.Body, Encoding.UTF8, true);
             var bodyString = await reader.ReadToEndAsync();
             HttpContext.Request.Body.Position = 0;
-            Console.WriteLine($"🟢 Body:              {bodyString}"); 
+            Console.WriteLine($"🟢 Body:              {bodyString}");
 
 
             return Ok(new { Message = "Đã đọc body thành công" });
@@ -73,5 +75,22 @@ namespace SalesDB.Controllers
             // chủ động trả lỗi
             throw new KeyNotFoundException("Loi 404 tu tao de test");
         }
+
+        [HttpGet("demoRedis")]
+        public async Task<IActionResult> DemoRedis(string key, string value, int minutes)
+        {
+
+            var res = await _redis.SetAsync(key, value, TimeSpan.FromMinutes(minutes));
+            var result = new ResponseEntity(200, res, "OK");
+            return result;
+        }
+        [HttpGet("getRedis")]
+        public async Task<IActionResult> Get(string key)
+        {
+            var value = await _redis.GetAsync(key);
+            var result = new ResponseEntity(200, value, "OK");
+            return result;
+        }
+
     }
 }

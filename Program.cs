@@ -12,6 +12,7 @@ using SalesDB.Mapping;
 using SalesDB.Middlewares;
 using SalesDB.Repositories;
 using SalesDB.Services;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +54,8 @@ builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 
 // JWT
 builder.Services.AddScoped<IJwtService, JwtService>();
+// DI REDIS
+builder.Services.AddScoped<IRedisService, RedisService>();
 
 // builder.Services.AddScoped<IOrderService, OrderService>();
 // giữ khởi tạo của OrderService cho đến khi dữ liệu trả về cho api
@@ -137,6 +140,20 @@ builder.Services.AddSingleton<ProductCacheState>();
 
 
 
+// REDIS
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var configuration = builder.Configuration.GetSection("Redis")["ConnectionStrings"];
+    if (string.IsNullOrEmpty(configuration))
+    {
+        throw new InvalidOperationException("Redis connecion faild");
+    }
+    return ConnectionMultiplexer.Connect(configuration);
+
+});
+
+
+
 
 var app = builder.Build();
 
@@ -155,19 +172,19 @@ app.UseStaticFiles(new StaticFileOptions
     //  giows hạn file
     OnPrepareResponse = opt =>
     {
-        var path  = opt.File.PhysicalPath;
+        var path = opt.File.PhysicalPath;
         // chỉ cho lấy jpg và png
-        if(!path.EndsWith(".jpg") && !path.EndsWith(".png"))
+        if (!path.EndsWith(".jpg") && !path.EndsWith(".png"))
         {
             opt.Context.Response.StatusCode = 403;
             opt.Context.Response.ContentLength = 0;
         }
         //              60s * 60p * 24h
         const int exp = 60 * 60 * 24; // 24 gio
-        opt.Context.Response.Headers.Append("Cache-Control",$"public,max-age={exp}");
+        opt.Context.Response.Headers.Append("Cache-Control", $"public,max-age={exp}");
     }
 }
-     
+
 );
 app.UseCors("AllowCors");
 // sử dụng middleware
@@ -194,8 +211,8 @@ app.UseAuthorization();
 // chỉ so chứ chưa thực hiện
 // HttpContext.GetEndpoint() - từ net 6 là đã tự đôngh thêm UseRouting rồi
 // app.UseRouting();
- 
-app.Use(async (context,next) =>
+
+app.Use(async (context, next) =>
 {
     var endpoint = context.GetEndpoint();
 
