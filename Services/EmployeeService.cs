@@ -10,7 +10,7 @@ namespace SalesDB.Services;
 
 public interface IEmployeeService
 {
-    Task<IActionResult> AddAsync(RegisterEmployee model); 
+    Task<IActionResult> AddAsync(RegisterEmployee model);
     Task<IActionResult> LoginAsync(LoginRequest model);
     Task<IActionResult> GetProfileById(int id);
 
@@ -18,9 +18,10 @@ public interface IEmployeeService
 
 // DIP
 public class EmployeeService(
-    IEmployeeRepository _repo, 
+    IEmployeeRepository _repo,
     IMapper _mapper,
-    IJwtService _jwt) : IEmployeeService
+    IJwtService _jwt,
+    IRedisService _redis) : IEmployeeService
 {
     public async Task<IActionResult> AddAsync(RegisterEmployee model)
     {
@@ -32,6 +33,10 @@ public class EmployeeService(
         return new ResponseEntity(201, res, "register success");
     }
 
+    private string GetLoginSessionKey(int employeeId)
+    {
+        return $"auth:employee:{employeeId}:session";
+    }
     public async Task<IActionResult> LoginAsync(LoginRequest model)
     {
         // phone, mk
@@ -48,9 +53,17 @@ public class EmployeeService(
         // login thành công sẽ trả ra token , Name, id, role => tạo class (DTO)
         // đổi từ Employee -> LoginResponse
         var response = _mapper.Map<LoginResponse>(emp);
-        response.Token = _jwt.GenerateToken(emp);
         if (isPasswordValid)
         {
+            var sessionId = Guid.NewGuid().ToString(); // 32 ký tự 
+            
+            Console.WriteLine("👉 sessionId " + sessionId);
+            response.Token = _jwt.GenerateToken(emp, sessionId);
+
+            // lưu session id này lên trên redis
+            // auth:employee:{id}:session
+            await _redis.SetAsync(GetLoginSessionKey(emp.EmployeeId), sessionId, _jwt.GetExpToken());
+
             return new ResponseEntity(200, response, "Login succes");
         }
 
@@ -66,7 +79,7 @@ public class EmployeeService(
     public async Task<IActionResult> GetProfileById(int id)
     {
         var emp = await _repo.GetByIdAsync(id);
-        var res  = _mapper.Map<EmployeeDto>(emp);
-        return new ResponseEntity(200,res,"Get profile success");
+        var res = _mapper.Map<EmployeeDto>(emp);
+        return new ResponseEntity(200, res, "Get profile success");
     }
 }

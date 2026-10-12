@@ -43,6 +43,55 @@ offset 20 rows fetch next 20 rows only -- trang 2
 -- offset (index -1)* pageSize rows fetch next pageSize rows only
 
 
+-- ĐẶT HÀNG
+-- tạo order , tạo orderdetail , giảm tồn 
+-- khong đảm bảo toàn vẹn của dữ 
+-- transaction 
+-- VD tạo kiểm tra số lượn tồn kho trước 
+-- ->  tạo order  2 sản phẩm
+-- tạo 2 order detail  , dòng 1 ok, dòng 2 lỗi (), 
+
+
+BEGIN TRANSACTION; -- bat dau transaction
+BEGIN TRY 
+-- validation
+	INSERT INTO Orders (CustomerID, TotalAmount)
+	VALUES (1, 15000000)
+	-- laay ra id vua tao
+	DECLARE @OrderId INT = SCOPE_IDENTITY()
+	
+	-- kiem tra ton kho
+	update Products SET Stock = Stock - 10
+	where Id = 2 AND Stock >= 10
+	-- neu co dong duoc thu thi <> 1 roll back
+	if @@ROWCOUNT <> 1
+		THROW  510000, N'Khoong du ton kho',2
+	
+	-- tao orderdeail
+	INSERT INTO OrderDetails (OrderID, ProductID, Quantity, Price)
+	VALUES
+	(@OrderId, 2, 10, 15000000)
+	
+	COMMIT TRANSACTION; -- xacs nhaanj luue
+
+	
+END TRY
+BEGIN CATCH
+	-- neu so luong trans > 0 thif rollback
+	IF @@TRANCOUNT > 0
+    ROLLBACK TRANSACTION;
+
+END CATCH
+	
+
+select * from Products p 
+select * from Orders 
+select * from OrderDetails 
+-- 1004 da tao luc nay -> bij xoa do transaction loix 
+
+
+
+
 
 
 

@@ -17,13 +17,16 @@ namespace SalesDB.Services;
 public interface IJwtService
 {
     // tạo token
-    string GenerateToken(Employee employee);
+    string GenerateToken(Employee employee, string sessionId);
+    TimeSpan GetExpToken(); // Lấy thời gian hết hạn của token
 }
 
 public class JwtService(IConfiguration _config) : IJwtService
 {
-    public string GenerateToken(Employee employee)
+    public string GenerateToken(Employee employee, string sessionId)
     {
+        // thêm sesion ID vào jwt để quản lý phiên làm việc 
+
         // lấy thông tin key ... trong appsetting
         var keyJWT = _config["Jwt:Key"] ?? "";
         var issuer = _config["Jwt:Issuer"]; // noi phát hành
@@ -37,12 +40,16 @@ public class JwtService(IConfiguration _config) : IJwtService
         claim.Add(new Claim(ClaimTypes.Role, employee.Role));
         claim.Add(new Claim(ClaimTypes.Name, employee.Name));
         claim.Add(new Claim("Phone", employee.Phone ?? ""));
+
+        // Mỗi lần tạo token sẽ có 1 session riêng , session này dùng để dối chiều với redis
+        // 
+        claim.Add(new Claim("session_id", sessionId));
         // 
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyJWT));
 
         var credential = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        var token  = new JwtSecurityToken(
+        var token = new JwtSecurityToken(
             issuer: issuer,
             audience: audience,
             claims: claim,
@@ -50,5 +57,10 @@ public class JwtService(IConfiguration _config) : IJwtService
             signingCredentials: credential
         );
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+    public TimeSpan GetExpToken()
+    {
+        var exp = _config.GetValue<int>("Jwt:Exp"); // tg het han
+        return TimeSpan.FromMinutes(exp);
     }
 }

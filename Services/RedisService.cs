@@ -10,6 +10,9 @@ public interface IRedisService
 
     // getredis
     Task<string?> GetAsync(string key);
+
+    // xoá cachce theo KEY
+    Task RemoveAsync(string key);
 }
 
 
@@ -26,6 +29,11 @@ public class RedisService(IConnectionMultiplexer redis) : IRedisService
     public async Task<string?> GetAsync(string key)
     {
         return await _db.StringGetAsync(key);
+    }
+    public async Task RemoveAsync(string key)
+    {
+        await _db.KeyDeleteAsync(key);
+            Console.WriteLine($"[CLEAR REDIS] Xoá cache Redis cho key: {key}");
     }
 
     

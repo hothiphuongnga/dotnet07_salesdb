@@ -21,10 +21,11 @@ public class ProductService(
     IProductRepository _repository,
     IMapper _mapper,
     ProductCacheState _productCacheState,
-    IConnectionMultiplexer _redis) : IProductService
+    // IConnectionMultiplexer _redis,
+    IRedisService _redisService) : IProductService
 {
     // lấy DB từ redis
-    private readonly IDatabase _db = _redis.GetDatabase();
+    // private readonly IDatabase _db = _redis.GetDatabase();
     public async Task<ResponseEntity> AddAsync(AddProductRequest model)
     {
         // clear cache product()
@@ -53,9 +54,9 @@ public class ProductService(
     {
         string key = $"saledb:product:{id}";
         // kiểm tra cache redis trước
-        var cached = await _db.StringGetAsync(key);
+        var cached = await _redisService.GetAsync(key);
         // cache HIT
-        if (cached.HasValue)
+        if (string.IsNullOrEmpty(cached))
         {
             Console.WriteLine("[HIT] 👊 lấy dữ liệu trên redis");
             var dto = JsonSerializer.Deserialize<ProductDto>(cached.ToString());
@@ -75,13 +76,13 @@ public class ProductService(
             Price = product.Price,
             Stock = product.Stock
         };
-        await _db.StringSetAsync(key, JsonSerializer.Serialize(res),new Expiration(TimeSpan.FromMinutes(5)) );
+        await _redisService.SetAsync(key, JsonSerializer.Serialize(res),TimeSpan.FromMinutes(5));
         return new ResponseEntity(200, res, "Lay san pham thanh cong");
     }
 
     public async Task<ResponseEntity> UpdateAsync(ProductDto model, int id)
     {
-        // clear cache
+        // clear cache khi sp thay đổi
         // check ton tai  -> update
         var product = await _repository.GetById(id);
 
@@ -96,7 +97,10 @@ public class ProductService(
         // map du lieu cua model vap cho product
         _mapper.Map(model, product);
         var res = await _repository.UpdateAsync(product);
-        _productCacheState.Clear();
+        _productCacheState.Clear(); // clear in-memory cache
+        // CLEAR CACHE trên REDIS
+        await _redisService.RemoveAsync($"saledb:product:{id}");
+        
 
         return new ResponseEntity(200, _mapper.Map<ProductDto>(res), "update success");
     }

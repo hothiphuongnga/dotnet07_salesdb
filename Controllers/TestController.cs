@@ -1,6 +1,7 @@
 namespace SalesDB.Controllers
 {
     using System.Text;
+    using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using SalesDB.Dtos.Base;
     using SalesDB.Services;
@@ -9,6 +10,7 @@ namespace SalesDB.Controllers
     [ApiController]
     public class TestController(IRedisService _redis) : ControllerBase
     {
+        [Authorize]
         [HttpGet("demo/{id}")]// demo/2
         public async Task<IActionResult> Get(int id, [FromHeader] string lang = "vi") // lang= vi , en, cn, jp
         {

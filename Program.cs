@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -56,6 +57,7 @@ builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 // DI REDIS
 builder.Services.AddScoped<IRedisService, RedisService>();
+builder.Services.AddScoped<IRedisService2, RedisService2>();
 
 // builder.Services.AddScoped<IOrderService, OrderService>();
 // giữ khởi tạo của OrderService cho đến khi dữ liệu trả về cho api
@@ -96,6 +98,42 @@ builder.Services.AddAuthentication(option =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero,
     };
+    // Event: xử lý các sụe kiện liên quan đến JWT
+    option.Events =  new JwtBearerEvents
+    {
+        OnTokenValidated =  async context =>
+        {
+            var employeeId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var sessionId = context.Principal?.FindFirst("session_id")?.Value;
+            Console.WriteLine("-- employeeId " + employeeId);
+            Console.WriteLine("-- sessionId " + sessionId);
+            if(string.IsNullOrEmpty(employeeId) || string.IsNullOrEmpty(sessionId))
+            {
+                            Console.WriteLine("-- lỗi ");
+
+                context.Fail("Token không có thông tin phiên đăng nhập");
+                return;
+            }
+            // Nếu token hợp lệ và có thông tin phiên đăng nhập, có thể thực hiện các kiểm tra bổ sung tại đây
+            try
+            {
+                var redis = context.HttpContext.RequestServices.GetRequiredService<IRedisService>();
+                var activeSesion = await redis.GetAsync($"auth:employee:{employeeId}:session");
+                Console.WriteLine($"------ Active session from Redis: {activeSesion}, Current session: {sessionId}");
+                if(!string.Equals(activeSesion, sessionId, StringComparison.Ordinal))
+                {
+                    context.Fail("Phiên đăng nhập không hợp lệ hoặc tài khoản đã đăng nhập trên thiết bị khác");
+                }
+            }
+            catch(RedisException ex)
+            {
+                context.Fail("Không thể xác thực phiên đăng nhập.");
+            }
+
+        }
+    };
+        
+    
 });
 builder.Services.AddAuthorization();
 
@@ -141,17 +179,23 @@ builder.Services.AddSingleton<ProductCacheState>();
 
 
 // REDIS
+var confRedis = builder.Configuration.GetSection("Redis")["ConnectionStrings"];
+
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-    var configuration = builder.Configuration.GetSection("Redis")["ConnectionStrings"];
-    if (string.IsNullOrEmpty(configuration))
+    if (string.IsNullOrEmpty(confRedis))
     {
         throw new InvalidOperationException("Redis connecion faild");
     }
-    return ConnectionMultiplexer.Connect(configuration);
+    return ConnectionMultiplexer.Connect(confRedis);
 
 });
 
+// Cấu hình Redis với Microsoft.Extensions.Caching.StackExchangeRedis
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = confRedis;
+});
 
 
 
