@@ -7,7 +7,7 @@ namespace SalesDB.Repositories;
 
 // ket noi den DB , 
 // su dung EF 
-public interface IProductRepository
+public interface IProductRepository : IRepositoryBase<Product, int>
 {
     // GetAll
     // GetById
@@ -20,7 +20,9 @@ public interface IProductRepository
 
 
 }
-public class ProductRepository(SalesDbContext _db) : IProductRepository
+public class ProductRepository(SalesDbContext _db) :
+    RepositoryBase<Product, int>(_db),
+ IProductRepository
 {
     public async Task<List<Product>> GetAllAsync()
     {

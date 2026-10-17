@@ -4,12 +4,12 @@ using SalesDB.Entities;
 
 namespace SalesDB.Repositories;
 
-public interface ICustomerRepository
+public interface ICustomerRepository : IRepositoryBase<Customer, int>
 {
     Task<List<Customer>> GetAllAsync();
     Task<Customer?> GetById(int id);
 }
-public class CustomerRepository(SalesDbContext _db) : ICustomerRepository
+public class CustomerRepository(SalesDbContext _db) : RepositoryBase<Customer,int>(_db), ICustomerRepository
 {
     public async Task<List<Customer>> GetAllAsync()
     {

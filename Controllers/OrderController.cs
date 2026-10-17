@@ -28,6 +28,6 @@ public class OrderController(IOrderService _service) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] CreateOrderDto createOrderDto)
     {
-        return await _service.CreateAsync(createOrderDto);
+        return await _service.UOW_CreateAsync(createOrderDto);
     }
 }

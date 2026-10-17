@@ -18,5 +18,13 @@ namespace SalesDB.Controllers
         {
             return await _service.GetByIdAsync(id);
         }
+
+        // api get ds bawnfg ds id
+
+        [HttpGet("by-ids")]
+        public async Task<IActionResult> GetByIds([FromQuery] int[] ids)
+        {
+            return await _service.GetByIdsAsync(ids);
+        }
     }
 }

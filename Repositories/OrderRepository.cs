@@ -26,7 +26,7 @@ public class OrderRepository(SalesDbContext _db) : IOrderRepository
         return order;
     }
 
-
+    // lấy ds sp bằng ds id  , không nên đăth ở đây -> nên đặt ở ProductRepository
     public async Task<List<Product>> GetProductsAsync(IEnumerable<int> productIds)
     {
         return await _db.Products

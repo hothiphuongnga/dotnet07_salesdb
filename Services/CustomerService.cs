@@ -1,17 +1,18 @@
 using AutoMapper;
 using SalesDB.Dtos.Base;
 using SalesDB.Dtos.Customer;
+using SalesDB.Entities;
 using SalesDB.Repositories;
 
 namespace SalesDB.Services;
 
-public interface ICustomersService
+public interface ICustomersService : IServiceBase<Customer,CustomerResponse>
 {
     Task<ResponseEntity> GetAllAsync();
     Task<ResponseEntity> GetByIdAsync(int id);
 }
 
-public class CustomersService(ICustomerRepository _repository, IMapper _mapper) : ICustomersService
+public class CustomersService(ICustomerRepository _repository, IMapper _mapper) : ServiceBase<Customer,CustomerResponse>(_repository,_mapper), ICustomersService
 {
     public async Task<ResponseEntity> GetAllAsync()
     {

@@ -75,6 +75,16 @@ builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
+
+
+// DI UNIT OF WORK
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// DI SERVICE BASE
+builder.Services.AddScoped(typeof(IServiceBase<,>), typeof(ServiceBase<,>));
+// DI REPO BASE
+builder.Services.AddScoped(typeof(IRepositoryBase<,>), typeof(RepositoryBase<,>));
+
 // Automapper
 
 builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));

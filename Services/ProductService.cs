@@ -8,7 +8,7 @@ using StackExchange.Redis;
 
 namespace SalesDB.Services;
 
-public interface IProductService
+public interface IProductService : IServiceBase<Product, ProductDto>
 {
     // getall , getbyid
     Task<ResponseEntity> GetAllProductsAsync();
@@ -22,7 +22,9 @@ public class ProductService(
     IMapper _mapper,
     ProductCacheState _productCacheState,
     // IConnectionMultiplexer _redis,
-    IRedisService _redisService) : IProductService
+    IRedisService _redisService) :
+    ServiceBase<Product, ProductDto>(_repository, _mapper),
+     IProductService
 {
     // lấy DB từ redis
     // private readonly IDatabase _db = _redis.GetDatabase();
@@ -56,7 +58,7 @@ public class ProductService(
         // kiểm tra cache redis trước
         var cached = await _redisService.GetAsync(key);
         // cache HIT
-        if (string.IsNullOrEmpty(cached))
+        if (!string.IsNullOrEmpty(cached))
         {
             Console.WriteLine("[HIT] 👊 lấy dữ liệu trên redis");
             var dto = JsonSerializer.Deserialize<ProductDto>(cached.ToString());

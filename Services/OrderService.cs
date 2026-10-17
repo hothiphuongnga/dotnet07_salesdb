@@ -13,10 +13,11 @@ public interface IOrderService
     Task<ResponseEntity> GetAllOrdersAsync();
     Task<ResponseEntity> GetOrderByIdAsync(int id);
     Task<ResponseEntity> CreateAsync(CreateOrderDto createOrderDto);
+    Task<ResponseEntity> UOW_CreateAsync(CreateOrderDto createOrderDto);
 
 }
 
-public class OrderService(IOrderRepository _repo, IMapper _mapper, SalesDbContext _context) : IOrderService
+public class OrderService(IOrderRepository _repo, IMapper _mapper, SalesDbContext _context, IUnitOfWork _unitOfWork) : IOrderService
 {
     public async Task<ResponseEntity> CreateAsync(CreateOrderDto createOrderDto)
     {
@@ -48,6 +49,7 @@ public class OrderService(IOrderRepository _repo, IMapper _mapper, SalesDbContex
                 }
                 product.Stock -= item.Quantity; // giarm toomf kho 
                                                 // taoj orrder detail
+                                                // savechange
                 order.OrderDetails.Add(new OrderDetail()
                 {
                     ProductId = item.ProductId,
@@ -77,6 +79,57 @@ public class OrderService(IOrderRepository _repo, IMapper _mapper, SalesDbContex
 
 
 
+    }
+    public async Task<ResponseEntity> UOW_CreateAsync(CreateOrderDto createOrderDto)
+    {
+        var productIds = createOrderDto.Items.Select(i => i.ProductId);
+        var products = await _unitOfWork.OrderRepository.GetProductsAsync(productIds);
+        // TRANSACTION - UOW
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            // createOrderDto -> Order
+            Order order = new Order()
+            {
+                CustomerId = createOrderDto.CustomerId,
+                OrderDate = DateTime.Now,
+                Status = "Pending"
+            };
+            // chayj vong lap xu ly chi tiet don hang
+            foreach (var item in createOrderDto.Items)
+            {
+                // kiem tra san pham cos du ton kho hay khong
+                var product = products.FirstOrDefault(p => p.Id == item.ProductId);
+                if (product.Stock < item.Quantity)
+                {
+                    throw new Exception($"khong du ton kho {product.ProductName}");
+                }
+                product.Stock -= item.Quantity; // giarm toomf kho 
+                                                // taoj orrder detail
+                                                // savechange
+                order.OrderDetails.Add(new OrderDetail()
+                {
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    Price = item.Price
+                });
+                // chuaarn xong order 
+            }
+            order.TotalAmount = order.OrderDetails.Sum(od => od.Quantity * od.Price);
+
+            await _unitOfWork.OrderRepository.CreateAsync(order);
+            // demo looix 
+            // throw new Exception("Demo loi - loi thanh toan");
+            await _unitOfWork.CommitTransactionAsync();
+            return new ResponseEntity(200, _mapper.Map<OrderDto>(order), "Order created successfully");
+
+
+        }
+        catch (Exception ex)
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
     }
 
     public async Task<ResponseEntity> GetAllOrdersAsync()
